@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom";
 import './index.css';
 
+const SIZE = 3;
+
 function Square({ value, onClick, highlighted }) {
   return (
     <button className={highlighted ? "winner-square" : "square"} onClick={onClick}>
@@ -11,6 +13,13 @@ function Square({ value, onClick, highlighted }) {
 }
 
 class Board extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      size: SIZE,
+    }
+  }
+
   renderSquare(i, highlighted) {
     return (
       <Square
@@ -25,54 +34,181 @@ class Board extends React.Component {
   render() {
     let board = [];
     const highlight = this.props.highlight;
+    const size = this.state.size;
 
     if (highlight) {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < size; i++) {
         let row = [];
-  
-        for (let j = i * 3; j < i * 3 + 3; j++) {
-            row.push(this.renderSquare(j, highlight.indexOf(j) !== -1));
+
+        for (let j = i * size; j < i * size + size; j++) {
+          row.push(this.renderSquare(j, highlight.indexOf(j) !== -1));
         }
-  
+
         board.push(<div key={`row-${i}`} className="board-row">{row}</div>);
       }
     } else {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < size; i++) {
         let row = [];
-  
-        for (let j = i * 3; j < i * 3 + 3; j++) {
+
+        for (let j = i * size; j < i * size + size; j++) {
           row.push(this.renderSquare(j));
         }
-  
+
         board.push(<div key={`row-${i}`} className="board-row">{row}</div>);
       }
     }
-    
+
     return board;
   }
 }
 
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
+function calculateWinner(squares, size, pos) {
+  const winPoint = size >= 5 ? 4 : size - 1;
+  let point = 0;
+  let col = pos % size;
+  let row = Math.floor(pos / size);
+  let x, y, checkPos;
+  let line = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return {
-        player: squares[a],
-        line: lines[i],
-      };
-    }
+  // Kiểm tra chiến thắng theo cột
+  // Các điểm phía dưới điểm vừa đánh 
+  x = row + 1;
+  y = col;
+  checkPos = x * size + y;
+
+  while (x < size && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x += 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
   }
+
+  // Các điểm phía trên điểm vừa đánh
+  x = row - 1;
+  checkPos = x * size + y;
+
+  while (x >= 0 && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x -= 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  if (point >= winPoint) {
+    line.push(pos);
+    return {
+      player: squares[pos],
+      line: line,
+    };
+  } 
+
+  // Kiểm tra chiến thắng theo hàng
+  // Các điểm bên trái điểm vừa đánh
+  point = 0
+  x = row;
+  y = col + 1;
+  line = [];
+  checkPos = x * size + y;
+
+  while (y < size && squares[checkPos] === squares[pos]) {
+    point += 1;
+    y += 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  // Các điểm bên phải điểm vừa đánh
+  y = col - 1;
+  checkPos = x * size + y;
+
+  while (y >= 0 && squares[checkPos] === squares[pos]) {
+    point += 1;
+    y -= 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  if (point >= winPoint) {
+    line.push(pos);
+    return {
+      player: squares[pos],
+      line: line,
+    };    
+  } 
+
+  // Kiểm tra chiến thắng theo đường chéo phải
+  // Các điểm phía dưới điểm vừa đánh
+  point = 0
+  x = row + 1;
+  y = col + 1;
+  checkPos = x * size + y;
+  line = [];
+
+  while (x < size && y < size && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x += 1;
+    y += 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  // Các điểm phía trên điểm vừa đánh
+  x = row - 1;
+  y = col - 1;
+  checkPos = x * size + y;
+
+  while (x >= 0 && y >= 0  && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x -= 1;
+    y -= 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  if (point >= winPoint) {
+    line.push(pos);
+    return {
+      player: squares[pos],
+      line: line,
+    };
+  } 
+
+  // Kiểm tra chiến thắng theo đường chéo trái
+  // Các điểm phía dưới điểm vừa đánh
+  point = 0
+  x = row + 1;
+  y = col - 1;
+  checkPos = x * size + y;
+  line = [];
+
+  while (x < size && y >= 0 && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x += 1;
+    y -= 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  // Các điểm phía trên điểm vừa đánh
+  x = row - 1;
+  y = col + 1;
+  checkPos = x * size + y;
+
+  while (x >= 0 && y < size && squares[checkPos] === squares[pos]) {
+    point += 1;
+    x -= 1;
+    y += 1;
+    line.push(checkPos);
+    checkPos = x * size + y;
+  }
+
+  if (point >= winPoint) {
+    line.push(pos);
+    return {
+      player: squares[pos],
+      line: line,
+    };
+  } 
 
   return null;
 }
@@ -81,14 +217,17 @@ class Game extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      size: SIZE,
       history: [{
-        squares: Array(9).fill(null),
+        squares: Array(SIZE * SIZE).fill(null),
       }],
       xIsNext: true,
       stepNumber: 0,
       selectedItem: -1,
-      position: [0],
+      position: [],
       isAscending: true,
+      winner: null,
+      line: [],
     };
   }
 
@@ -97,17 +236,22 @@ class Game extends React.Component {
     const current = history[history.length - 1];
     const squares = current.squares.slice();
 
-    if (calculateWinner(squares) || squares[i]) {
+    if (this.state.winner || squares[i]) {
       return;
     }
 
     squares[i] = this.state.xIsNext ? 'X' : 'O';
-    let position = this.state.position;
+    let player = null;
+    let line = [];
+    let result = calculateWinner(squares, this.state.size, i);
 
-    if (this.state.position.slice.length <= history.length) {
-      position = this.state.position.slice(0, this.state.stepNumber);
-      position.push(i);
+    if (result) {
+      player = result.player;
+      line = [...result.line];
     }
+
+    let position = this.state.position.slice(0, this.state.stepNumber);
+    position.push(i);
 
     this.setState({
       history: history.concat([{
@@ -117,6 +261,8 @@ class Game extends React.Component {
       stepNumber: history.length,
       position: position,
       selectedItem: -1,
+      winner: player,
+      line: [...line],
     });
   }
 
@@ -125,6 +271,7 @@ class Game extends React.Component {
       stepNumber: step,
       xIsNext: (step % 2) === 0,
       selectedItem: step,
+      winner: null,
     });
   }
 
@@ -137,11 +284,10 @@ class Game extends React.Component {
   render() {
     const history = this.state.history;
     const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
 
     let moves = history.map((step, move) => {
-      const col = this.state.position[move - 1] % 3 + 1;
-      const row = Math.floor(this.state.position[move - 1] / 3) + 1;
+      const col = this.state.position[move - 1] % this.state.size + 1;
+      const row = Math.floor(this.state.position[move - 1] / this.state.size) + 1;
       const desc = move ?
         'Go to move #' + move + ": (" + col + ", " + row + ")" :
         'Go to game start';
@@ -157,10 +303,10 @@ class Game extends React.Component {
     if (!this.state.isAscending) moves = moves.reverse();
 
     let status;
-    
-    if (winner) {
-      status = 'Winner: ' + winner.player;
-    } else if (this.state.stepNumber === 9) {
+
+    if (this.state.winner) {
+      status = 'Winner: ' + this.state.winner;
+    } else if (this.state.stepNumber === this.state.size * this.state.size) {
       status = 'Draw';
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
@@ -172,7 +318,7 @@ class Game extends React.Component {
           <Board
             squares={current.squares}
             onClick={(i) => this.handleClick(i)}
-            highlight={winner ? winner.line : null}
+            highlight={this.state.winner ? this.state.line : null}
           />
         </div>
         <div className="game-info">
